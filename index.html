@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countdown</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0e11;
+    --surface: #19171e;
+    --ring-bg: #2a2733;
+    --accent: #87ceeb;
+    --accent2: #b8e4f7;
+    --accent-dim: rgba(135, 206, 235, 0.18);
+    --text: #f0ece4;
+    --muted: #7a7385;
+    --glow: rgba(135, 206, 235, 0.22);
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    color: var(--text);
+  }
+
+  /* ── Setup screen ── */
+  #setup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+    max-width: 300px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  #setup h1 {
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .input-group label {
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .input-group input {
+    background: var(--surface);
+    border: 1px solid var(--ring-bg);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    padding: 9px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-group input:focus { border-color: var(--accent); }
+  .input-group input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent2);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 10px 24px;
+    transition: background 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .btn:hover { background: var(--accent-dim); box-shadow: 0 0 16px var(--glow); }
+
+  /* ── Widget screen ── */
+  #widget {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    animation: fadeIn 0.8s ease;
+  }
+
+  .event-title {
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    text-align: center;
+    max-width: 200px;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+
+  /* ── Ring ── */
+  .ring-wrap {
+    position: relative;
+    width: 200px;
+    height: 200px;
+  }
+
+  .ring-wrap svg {
+    overflow: visible;
+  }
+
+  .day-num {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+  }
+
+  .day-num span:first-child {
+    font-size: 3.2rem;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .day-num span:last-child {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  /* ── Footer ── */
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .footer-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .target-date {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .reset-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.04em;
+    text-decoration: underline;
+    padding: 2px;
+    transition: color 0.2s;
+  }
+  .reset-btn:hover { color: var(--accent); }
+
+  /* ── Done screen ── */
+  #done {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: fadeIn 0.8s ease;
+  }
+
+  #done .big {
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  #done .sub {
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.65); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Setup -->
+<div id="setup">
+  <h1>Countdown</h1>
+
+  <div class="input-group">
+    <label>Event name</label>
+    <input type="text" id="eventName" placeholder="e.g. Trip to Japan" maxlength="40">
+  </div>
+
+  <div class="input-group">
+    <label>Target date</label>
+    <input type="date" id="targetDate">
+  </div>
+
+  <button class="btn" onclick="startCountdown()">Start Countdown</button>
+</div>
+
+<!-- Widget -->
+<div id="widget">
+  <div class="event-title" id="widgetTitle"></div>
+
+  <div class="ring-wrap">
+    <svg id="ringsvg" width="200" height="200" viewBox="0 0 200 200"></svg>
+    <div class="day-num">
+      <span id="numDays">0</span>
+      <span>days</span>
+    </div>
+  </div>
+
+  <div class="footer-col">
+    <div class="footer-row">
+      <div class="dot"></div>
+      <span class="target-date" id="targetDisplay"></span>
+    </div>
+    <button class="reset-btn" onclick="resetWidget()">Change date</button>
+  </div>
+</div>
+
+<!-- Done -->
+<div id="done">
+  <div class="big" id="doneTitle"></div>
+  <div class="sub">The day has arrived ✦</div>
+  <button class="reset-btn" onclick="resetWidget()">Set a new countdown</button>
+</div>
+
+<script>
+  let timer = null;
+  let targetMs = null;
+  let startMs = null;
+  let totalDays = null;
+
+  function getMidnight(ms) {
+    const d = new Date(ms);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  // Draw segmented ring: totalSegs segments, filledSegs are lit
+  function drawRing(totalSegs, filledSegs) {
+    const svg = document.getElementById('ringsvg');
+    svg.innerHTML = '';
+
+    const cx = 100, cy = 100, r = 80;
+    const strokeWidth = 14;
+    const gapDeg = totalSegs <= 60 ? 5 : 3; // gap between segments in degrees
+    const segDeg = (360 / totalSegs) - gapDeg;
+    const startOffset = -90; // start from top
+
+    for (let i = 0; i < totalSegs; i++) {
+      const startDeg = startOffset + i * (360 / totalSegs);
+      const endDeg   = startDeg + segDeg;
+
+      const startRad = (startDeg * Math.PI) / 180;
+      const endRad   = (endDeg   * Math.PI) / 180;
+
+      const x1 = cx + r * Math.cos(startRad);
+      const y1 = cy + r * Math.sin(startRad);
+      const x2 = cx + r * Math.cos(endRad);
+      const y2 = cy + r * Math.sin(endRad);
+
+      const largeArc = segDeg > 180 ? 1 : 0;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-width', strokeWidth);
+      path.setAttribute('stroke-linecap', 'butt');
+
+      // Segments fill FROM the end as date approaches
+      // i.e. last `filledSegs` segments are lit
+      const isFilled = i >= (totalSegs - filledSegs);
+
+      if (isFilled) {
+        path.setAttribute('stroke', '#87ceeb');
+        path.style.opacity = '1';
+      } else {
+        path.setAttribute('stroke', '#2a2733');
+        path.style.opacity = '1';
+      }
+
+      svg.appendChild(path);
+    }
+  }
+
+  function startCountdown() {
+    const name    = document.getElementById('eventName').value.trim() || 'Countdown';
+    const dateVal = document.getElementById('targetDate').value;
+    if (!dateVal) { alert('Please pick a date!'); return; }
+
+    const [y, m, d] = dateVal.split('-').map(Number);
+    targetMs = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+    startMs  = getMidnight(Date.now());
+
+    const dayAfterTarget = targetMs + 86400000;
+    if (getMidnight(Date.now()) >= dayAfterTarget) { showDone(name); return; }
+
+    totalDays = Math.max(1, Math.round((targetMs - startMs) / 86400000));
+
+    document.getElementById('widgetTitle').textContent  = name;
+    document.getElementById('targetDisplay').textContent =
+      new Date(targetMs).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    document.getElementById('setup').style.display  = 'none';
+    document.getElementById('done').style.display   = 'none';
+    document.getElementById('widget').style.display = 'flex';
+
+    tick();
+    timer = setInterval(tick, 60000);
+  }
+
+  function tick() {
+    const todayMidnight  = getMidnight(Date.now());
+    const dayAfterTarget = targetMs + 86400000;
+
+    if (todayMidnight >= dayAfterTarget) {
+      clearInterval(timer);
+      showDone(document.getElementById('widgetTitle').textContent);
+      return;
+    }
+
+    const daysLeft = Math.max(0, Math.round((targetMs - todayMidnight) / 86400000));
+    document.getElementById('numDays').textContent = daysLeft;
+
+    // Segments = total days; filled = days elapsed so far (ring fills up toward target)
+    const elapsed = totalDays - daysLeft;
+    drawRing(totalDays, elapsed);
+  }
+
+  function showDone(name) {
+    document.getElementById('setup').style.display  = 'none';
+    document.getElementById('widget').style.display = 'none';
+    document.getElementById('done').style.display   = 'flex';
+    document.getElementById('doneTitle').textContent = name;
+  }
+
+  function resetWidget() {
+    clearInterval(timer);
+    document.getElementById('widget').style.display = 'none';
+    document.getElementById('done').style.display   = 'none';
+    document.getElementById('setup').style.display  = 'flex';
+    document.getElementById('eventName').value  = '';
+    document.getElementById('targetDate').value = '';
+  }
+</script>
+</body>
+</html>
